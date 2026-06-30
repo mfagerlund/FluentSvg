@@ -25,6 +25,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <!-- The library is just Svg.cs at the repo root; keep the samples generator out of it. -->
+  <ItemGroup>
+    <Compile Remove="samples\**\*.cs" />
+    <None Remove="samples\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
