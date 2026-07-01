@@ -49,6 +49,8 @@ public class Svg : Svg.IAttributed
     public string? Title { get; set; }
     public List<RenderItem> RenderItems { get; } = [];
     public List<ClipPath> ClipPaths { get; } = [];
+    /// <summary>Items rendered inside the document &lt;defs&gt; block (e.g. symbols).</summary>
+    public List<RenderItem> Defs { get; } = [];
     public IEnumerable<Vector2> Points => RenderItems.SelectMany(x => x.Points).Concat(ClipPaths.SelectMany(x => x.Points));
     public AttributeCollection Attributes { get; } = new();
     public string Id { get; set; }
@@ -76,6 +78,17 @@ public class Svg : Svg.IAttributed
     public Rectangle AddRectangleFromTo(Vector2 from, Vector2 to) => new(this, from, to);
     public Rectangle AddRectangleSized(Vector2 from, Vector2 size) => new(this, from, from + size);
     public Rectangle AddRectangleCenterSized(Vector2 center, Vector2 size) => new(this, center - size * 0.5f, center + size * 0.5f);
+    public Ellipse AddEllipse(Vector2 center, float rx, float ry) => new(this, center, rx, ry);
+    public Poly AddPolygon(IEnumerable<Vector2> points) => new(this, points, closed: true);
+    public Poly AddPolygon(params Vector2[] points) => new(this, points, closed: true);
+    public Poly AddPolyline(IEnumerable<Vector2> points) => new(this, points, closed: false);
+    public Poly AddPolyline(params Vector2[] points) => new(this, points, closed: false);
+    /// <summary>A path you build up with fluent segment calls (lines, cubic/quadratic beziers, arcs).</summary>
+    public PathBuilder AddPathBuilder() => new(this);
+    /// <summary>Defines a reusable &lt;symbol&gt; in &lt;defs&gt;; add shapes to it, then reference it with <see cref="AddUse(string,Vector2)"/>.</summary>
+    public Symbol AddSymbol(string id) => new(this, id);
+    public Use AddUse(string symbolId, Vector2 position) => new(this, symbolId, position);
+    public Use AddUse(string symbolId) => new(this, symbolId, Vector2.Zero);
 
     public Animate AddAnimate(RenderItem target, string attributeName, string duration, IEnumerable<float> values)
         => new(this, target, attributeName, duration, values);
@@ -127,6 +140,31 @@ public class Svg : Svg.IAttributed
         return animate;
     }
 
+    private static void EnsureId(RenderItem target)
+    {
+        if (string.IsNullOrWhiteSpace(target.Id))
+        {
+            target.SetId(Guid.NewGuid().ToString().Substring(0, 6));
+        }
+    }
+
+    /// <summary>Animates the element's transform (type = "translate" | "rotate" | "scale").
+    /// Set <paramref name="additive"/> when stacking several transform animations on one element
+    /// (e.g. translate + rotate), so they compose instead of replacing each other.</summary>
+    public AnimateTransform AddAnimateTransform(RenderItem target, string type, string duration, IEnumerable<string> values, bool additive = false)
+    {
+        EnsureId(target);
+        return new AnimateTransform(this, target, type, duration, values, additive);
+    }
+
+    public AnimateTransform AddAnimateTranslate(RenderItem target, string duration, IEnumerable<Vector2> positions, bool additive = false)
+        => AddAnimateTransform(target, "translate", duration, positions.Select(p => $"{Tos(p.X)} {Tos(p.Y)}"), additive);
+
+    /// <summary>Animates rotation (degrees). Pass <paramref name="about"/> to rotate around a fixed pivot;
+    /// omit it to rotate around the element's own origin.</summary>
+    public AnimateTransform AddAnimateRotate(RenderItem target, string duration, IEnumerable<float> anglesDeg, Vector2? about = null, bool additive = false)
+        => AddAnimateTransform(target, "rotate", duration,
+            anglesDeg.Select(a => about is { } c ? $"{Tos(a)} {Tos(c.X)} {Tos(c.Y)}" : Tos(a)), additive);
 
     public Line AddLine(Vector2 from, Vector2 to) => new(this, from, to);
     public Text AddText(Vector2 position, string label) => new(this, position, label);
@@ -199,16 +237,17 @@ public class Svg : Svg.IAttributed
         // Render title element if set
         if (!string.IsNullOrEmpty(Title))
         {
-            sb.AppendLine($"{Indent}<title>{Title}</title>");
+            sb.AppendLine($"{Indent}<title>{EscapeText(Title)}</title>");
         }
 
-        // Render defs section if we have clip paths
-        if (ClipPaths.Count > 0)
+        // Render defs section if we have clip paths or other defs (symbols, gradients, ...)
+        if (ClipPaths.Count > 0 || Defs.Count > 0)
         {
             sb.AppendLine($"{Indent}<defs>");
             var oldIndent = Indent;
             Indent += "  ";
             ClipPaths.ForEach(x => x.Render(sb));
+            Defs.ForEach(x => x.Render(sb));
             Indent = oldIndent;
             sb.AppendLine($"{Indent}</defs>");
         }
@@ -250,6 +289,17 @@ public class Svg : Svg.IAttributed
     }
 
     public static string Tos(float value) => value.ToString(CultureInfo.InvariantCulture);
+
+    // Escaping. The document is assembled with ' delimiters and the ' -> " swap runs once at
+    // the end (see Render), so every value also escapes ' to &#39; — that way the swap only ever
+    // touches structural delimiters and never corrupts user content containing apostrophes.
+    public static string EscapeText(string? s)
+        => string.IsNullOrEmpty(s) ? s ?? "" : s
+            .Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("'", "&#39;");
+
+    public static string EscapeAttr(string? s)
+        => string.IsNullOrEmpty(s) ? s ?? "" : s
+            .Replace("&", "&amp;").Replace("<", "&lt;").Replace("\"", "&quot;").Replace("'", "&#39;");
 
     private static bool RoughlyEquals(Vector2 a, Vector2 b, float epsilon = 1e-4f)
         => Math.Abs(a.X - b.X) < epsilon && Math.Abs(a.Y - b.Y) < epsilon;
@@ -326,7 +376,7 @@ public class Svg : Svg.IAttributed
 
         public override string ToString()
         {
-            return string.Join(" ", Attributes.Select(x => $"{x.Name}='{x.Value}'"));
+            return string.Join(" ", Attributes.Select(x => $"{x.Name}='{EscapeAttr(x.Value)}'"));
         }
 
         public void Set(string attributeName, string attributeValue) => Set(new Attribute(attributeName, attributeValue));
@@ -423,7 +473,8 @@ public class Svg : Svg.IAttributed
 
         public override void Render(StringBuilder sb)
         {
-            sb.AppendLine($"{Svg.Indent}<!-- {Label} -->");
+            // '--' is illegal inside an XML comment; keep the text but break the sequence.
+            sb.AppendLine($"{Svg.Indent}<!-- {Label.Replace("--", "- -")} -->");
         }
 
         public override IEnumerable<Vector2> Points => [];
@@ -486,7 +537,7 @@ public class Svg : Svg.IAttributed
 
         public override void Render(StringBuilder sb)
         {
-            sb.AppendLine($"{Svg.Indent}<clipPath id='{_id}'>");
+            sb.AppendLine($"{Svg.Indent}<clipPath id='{EscapeAttr(_id)}'>");
             if (_isTriangle && _trianglePoints != null)
             {
                 var p1 = _trianglePoints[0];
@@ -566,12 +617,23 @@ public class Svg : Svg.IAttributed
         public Vector2 From { get; } = from;
         public Vector2 To { get; } = to;
         public Vector2 Size => To - From;
+        public float? Rx { get; private set; }
+        public float? Ry { get; private set; }
+
+        /// <summary>Rounds the corners; pass a single radius for both axes, or supply <paramref name="ry"/> separately.</summary>
+        public Rectangle SetCornerRadius(float rx, float? ry = null)
+        {
+            Rx = rx;
+            Ry = ry ?? rx;
+            return this;
+        }
 
         public override IEnumerable<Vector2> Points => [From, To];
 
         public override void Render(StringBuilder sb)
         {
-            sb.AppendLine($"{Svg.Indent}<rect {Attributes} x='{Tos(From.X)}' y='{Tos(From.Y)}' width='{Tos(Size.X)}' height='{Tos(Size.Y)}'/>");
+            var corners = (Rx is { } rx ? $" rx='{Tos(rx)}'" : "") + (Ry is { } ry ? $" ry='{Tos(ry)}'" : "");
+            sb.AppendLine($"{Svg.Indent}<rect {Attributes} x='{Tos(From.X)}' y='{Tos(From.Y)}' width='{Tos(Size.X)}' height='{Tos(Size.Y)}'{corners}/>");
         }
     }
 
@@ -599,6 +661,168 @@ public class Svg : Svg.IAttributed
         {
             sb.AppendLine($"{Svg.Indent}<circle  {Attributes} cx='{Tos(Center.X)}' cy='{Tos(Center.Y)}' r='{Tos(Radius)}' />");
         }
+    }
+
+    public class Ellipse(Svg svg, Vector2 center, float rx, float ry) : RenderItem(svg)
+    {
+        public Vector2 Center { get; } = center;
+        public float Rx { get; set; } = rx;
+        public float Ry { get; set; } = ry;
+
+        public override IEnumerable<Vector2> Points => [Center - new Vector2(Rx, Ry), Center + new Vector2(Rx, Ry)];
+
+        public override void Render(StringBuilder sb)
+        {
+            sb.AppendLine($"{Svg.Indent}<ellipse {Attributes} cx='{Tos(Center.X)}' cy='{Tos(Center.Y)}' rx='{Tos(Rx)}' ry='{Tos(Ry)}'/>");
+        }
+    }
+
+    /// <summary>A &lt;polygon&gt; (closed) or &lt;polyline&gt; (open) from a list of points.</summary>
+    public class Poly(Svg svg, IEnumerable<Vector2> points, bool closed) : RenderItem(svg)
+    {
+        private readonly List<Vector2> _points = points.ToList();
+        public bool Closed { get; } = closed;
+
+        public override IEnumerable<Vector2> Points => _points;
+
+        public override void Render(StringBuilder sb)
+        {
+            var pts = string.Join(" ", _points.Select(p => $"{Tos(p.X)},{Tos(p.Y)}"));
+            sb.AppendLine($"{Svg.Indent}<{(Closed ? "polygon" : "polyline")} {Attributes} points='{pts}'/>");
+        }
+    }
+
+    /// <summary>Fluent builder for an arbitrary path — straight segments, cubic/quadratic beziers and arcs.
+    /// Extents use the anchor and control points (a safe over-estimate of the true curve bounds).</summary>
+    public class PathBuilder(Svg svg) : RenderItem(svg)
+    {
+        private readonly StringBuilder _d = new();
+        private readonly List<Vector2> _pts = [];
+        private Vector2 _last;
+
+        private static string P(Vector2 p) => $"{Tos(p.X)},{Tos(p.Y)}";
+
+        private PathBuilder Track(Vector2 last, params Vector2[] control)
+        {
+            _pts.AddRange(control);
+            _pts.Add(last);
+            _last = last;
+            return this;
+        }
+
+        public PathBuilder MoveTo(Vector2 p) { _d.Append($"M{P(p)} "); return Track(p); }
+        public PathBuilder LineTo(Vector2 p) { _d.Append($"L{P(p)} "); return Track(p); }
+        public PathBuilder HLineTo(float x) { _d.Append($"H{Tos(x)} "); return Track(new Vector2(x, _last.Y)); }
+        public PathBuilder VLineTo(float y) { _d.Append($"V{Tos(y)} "); return Track(new Vector2(_last.X, y)); }
+        public PathBuilder CubicTo(Vector2 c1, Vector2 c2, Vector2 end) { _d.Append($"C{P(c1)} {P(c2)} {P(end)} "); return Track(end, c1, c2); }
+        public PathBuilder SmoothCubicTo(Vector2 c2, Vector2 end) { _d.Append($"S{P(c2)} {P(end)} "); return Track(end, c2); }
+        public PathBuilder QuadTo(Vector2 c, Vector2 end) { _d.Append($"Q{P(c)} {P(end)} "); return Track(end, c); }
+        public PathBuilder SmoothQuadTo(Vector2 end) { _d.Append($"T{P(end)} "); return Track(end); }
+
+        public PathBuilder ArcTo(Vector2 radius, float xAxisRotationDeg, bool largeArc, bool sweep, Vector2 end)
+        {
+            _d.Append($"A{Tos(radius.X)},{Tos(radius.Y)} {Tos(xAxisRotationDeg)} {(largeArc ? 1 : 0)} {(sweep ? 1 : 0)} {P(end)} ");
+            return Track(end);
+        }
+
+        public PathBuilder Close() { _d.Append("Z "); return this; }
+
+        public override void Render(StringBuilder sb)
+            => sb.AppendLine($"{Svg.Indent}<path {Attributes} d='{_d.ToString().Trim()}'/>");
+
+        public override IEnumerable<Vector2> Points => _pts;
+    }
+
+    public class AnimateTransform(
+        Svg svg,
+        RenderItem target,
+        string type,
+        string duration,
+        IEnumerable<string> values,
+        bool additive = false)
+        : RenderItem(svg)
+    {
+        public RenderItem Target { get; } = target;
+        public string Type { get; } = type;
+        public string Duration { get; } = duration;
+        public string Values { get; } = string.Join(";", values);
+        public bool Additive { get; } = additive;
+
+        public override void Render(StringBuilder sb)
+        {
+            if (Target.Id == null)
+            {
+                throw new InvalidOperationException("Target must have id set!");
+            }
+
+            this.SetAttribute("dur", Duration);
+            this.SetAttribute("xlink:href", "#" + Target.Id);
+            this.SetAttribute("attributeName", "transform");
+            this.SetAttribute("attributeType", "XML");
+            this.SetAttribute("type", Type);
+            if (Additive)
+            {
+                this.SetAttribute("additive", "sum");
+            }
+
+            this.SetAttribute("fill", "freeze");
+
+            sb.AppendLine($"{Svg.Indent}<animateTransform {Attributes}");
+            sb.AppendLine($"{Svg.Indent}  values='{Values}' />");
+        }
+
+        public override IEnumerable<Vector2> Points => [];
+    }
+
+    /// <summary>A reusable template rendered into &lt;defs&gt;. Add shapes with <see cref="AddChild"/>,
+    /// then place instances with <see cref="Svg.AddUse(string,Vector2)"/>.</summary>
+    public class Symbol : RenderItem
+    {
+        private readonly string _id;
+
+        public Symbol(Svg svg, string id) : base(svg)
+        {
+            _id = id;
+            svg.RenderItems.Remove(this);
+            svg.Defs.Add(this);
+        }
+
+        public new string Id => _id;
+        public List<RenderItem> Children { get; } = [];
+
+        public void AddChild(RenderItem child)
+        {
+            Svg.RenderItems.Remove(child);
+            Children.Add(child);
+        }
+
+        public override void Render(StringBuilder sb)
+        {
+            // overflow:visible so instances aren't clipped to the symbol's implicit viewport.
+            sb.AppendLine($"{Svg.Indent}<symbol id='{EscapeAttr(_id)}' overflow='visible'>");
+            var p = Svg.Indent;
+            Svg.Indent += "  ";
+            Children.ForEach(c => c.Render(sb));
+            Svg.Indent = p;
+            sb.AppendLine($"{Svg.Indent}</symbol>");
+        }
+
+        public override IEnumerable<Vector2> Points => [];
+    }
+
+    public class Use(Svg svg, string symbolId, Vector2 position) : RenderItem(svg)
+    {
+        public string SymbolId { get; } = symbolId;
+        public Vector2 Position { get; } = position;
+
+        public override void Render(StringBuilder sb)
+        {
+            this.SetAttribute("href", "#" + SymbolId);
+            this.SetAttribute("xlink:href", "#" + SymbolId);
+            sb.AppendLine($"{Svg.Indent}<use {Attributes} x='{Tos(Position.X)}' y='{Tos(Position.Y)}'/>");
+        }
+
+        public override IEnumerable<Vector2> Points => [Position];
     }
 
     public class Text : RenderItem
@@ -642,7 +866,7 @@ public class Svg : Svg.IAttributed
                 Attributes);
 
             sb.Append(">");
-            sb.Append(Label);
+            sb.Append(EscapeText(Label));
             sb.AppendLine("</text>");
         }
 
@@ -764,6 +988,7 @@ public static class SvgRenderItemMethods
     public static T SetStroke<T>(this T ri, string value, float strokeWidth) where T : Svg.IAttributed => ri.SetAttribute("stroke", value).SetStrokeWidth(strokeWidth);
     public static T SetStrokeDashArray<T>(this T ri, string value = "4 2") where T : Svg.IAttributed => ri.SetAttribute("stroke-dasharray", value);
     public static T SetStroke<T>(this T ri, Color value) where T : Svg.IAttributed => ri.SetAttribute("stroke", Svg.ToRgbString(value));
+    public static T SetStroke<T>(this T ri, Color value, float strokeWidth) where T : Svg.IAttributed => ri.SetAttribute("stroke", Svg.ToRgbString(value)).SetStrokeWidth(strokeWidth);
     public static T SetStrokeOpacity<T>(this T ri, float value) where T : Svg.IAttributed => ri.SetAttribute("stroke-opacity", value);
 
     public static T SetFontFamily<T>(this T ri, string value) where T : Svg.IAttributed => ri.SetAttribute("font-family", value);

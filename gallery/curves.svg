@@ -1,0 +1,12 @@
+<svg viewBox="0 0 241 148" stroke="DarkGoldenRod" stroke-width="1" fill="transparent" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="241mm" height="148mm" >
+  <title>FluentSvg — curves (PathBuilder)</title>
+  <rect fill="#0b1020" stroke-width="0" x="0" y="0" width="240" height="140"/>
+  <path fill="#f472b6" stroke="#be185d" stroke-width="1" d="M45,68 C19,48 29,22 45,40 C61,22 71,48 45,68 Z"/>
+  <path fill="transparent" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" d="M95,45 Q107,20 119,45 Q131,70 143,45 Q155,20 167,45 Q179,70 191,45"/>
+  <path fill="#a78bfa" stroke="#7c3aed" stroke-width="1" d="M200,52 L226,52 A26,26 0 0 1 200,78 Z"/>
+  <path stroke="#34d399" stroke-width="2" fill="transparent" d="M14 118 L54 98 L94 118 L134 98 L174 118 L214 98"/>
+  <text x="45" y="82" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="6" font-family="sans-serif">CubicTo</text>
+  <text x="131" y="84" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="6" font-family="sans-serif">QuadTo</text>
+  <text x="200" y="92" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="6" font-family="sans-serif">ArcTo</text>
+  <text x="120" y="132" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="6" font-family="sans-serif">Svg.DecodePath -&gt; AddPath</text>
+</svg>

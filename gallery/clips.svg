@@ -1,0 +1,78 @@
+<svg viewBox="-52 0 326 112" stroke="DarkGoldenRod" stroke-width="1" fill="transparent" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="326mm" height="112mm" >
+  <title>FluentSvg — clip paths</title>
+  <defs>
+    <clipPath id="clipRect">
+      <rect x="14" y="26" width="56" height="56"/>
+    </clipPath>
+    <clipPath id="clipTri">
+      <path d="M120,26 L92,82 L148,82 Z"/>
+    </clipPath>
+    <clipPath id="clipHole">
+      <path clip-rule="evenodd" d="M170,24 L224,24 L224,84 L170,84 Z M196,30 L178,74 L214,74 Z"/>
+    </clipPath>
+  </defs>
+  <rect fill="#0b1020" stroke-width="0" x="0" y="0" width="240" height="110"/>
+  <g clip-path="url(#clipRect)">
+    <path stroke="#38bdf8" stroke-width="5" d="M-12 26 L-52 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M-5 26 L-45 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M2 26 L-38 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M9 26 L-31 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M16 26 L-24 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M23 26 L-17 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M30 26 L-10 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M37 26 L-3 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M44 26 L4 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M51 26 L11 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M58 26 L18 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M65 26 L25 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M72 26 L32 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M79 26 L39 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M86 26 L46 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M93 26 L53 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M100 26 L60 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M107 26 L67 86"/>
+  </g>
+  <g clip-path="url(#clipTri)">
+    <path stroke="#38bdf8" stroke-width="5" d="M84 26 L44 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M91 26 L51 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M98 26 L58 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M105 26 L65 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M112 26 L72 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M119 26 L79 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M126 26 L86 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M133 26 L93 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M140 26 L100 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M147 26 L107 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M154 26 L114 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M161 26 L121 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M168 26 L128 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M175 26 L135 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M182 26 L142 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M189 26 L149 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M196 26 L156 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M203 26 L163 86"/>
+  </g>
+  <g clip-path="url(#clipHole)">
+    <path stroke="#38bdf8" stroke-width="5" d="M154 26 L114 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M161 26 L121 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M168 26 L128 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M175 26 L135 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M182 26 L142 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M189 26 L149 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M196 26 L156 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M203 26 L163 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M210 26 L170 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M217 26 L177 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M224 26 L184 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M231 26 L191 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M238 26 L198 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M245 26 L205 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M252 26 L212 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M259 26 L219 86"/>
+    <path stroke="#38bdf8" stroke-width="5" d="M266 26 L226 86"/>
+    <path stroke="#f472b6" stroke-width="5" d="M273 26 L233 86"/>
+  </g>
+  <text x="42" y="96" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="5.400000095367432" font-family="sans-serif">AddClipPath (rect)</text>
+  <text x="120" y="96" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="5.400000095367432" font-family="sans-serif">AddClipPath (triangle)</text>
+  <text x="197" y="96" stroke="transparent" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="5" font-family="sans-serif">AddClipPathExcludeTriangle</text>
+</svg>
